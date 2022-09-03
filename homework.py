@@ -1,11 +1,19 @@
-...
+import logging
+import os
+import time
+import requests
+
+import telegram
+from telegram import Bot
+from telegram.ext import Updater
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
-
-PRACTICUM_TOKEN = ...
-TELEGRAM_TOKEN = ...
-TELEGRAM_CHAT_ID = ...
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -17,6 +25,8 @@ HOMEWORK_STATUSES = {
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
+
+updater = Updater(token=TELEGRAM_TOKEN)
 
 
 def send_message(bot, message):
@@ -54,13 +64,13 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-
-    ...
+    response = requests.get(ENDPOINT).json()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
 
-    ...
+    updater.start_polling(poll_interval=RETRY_TIME)
+    updater.idle()
 
     while True:
         try:
