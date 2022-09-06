@@ -1,14 +1,13 @@
+from http import HTTPStatus
 import logging
 import os
 from telnetlib import STATUS
 import time
-from urllib import response
 import requests
 
 import telegram
 from telegram import Bot
 from telegram.ext import Updater
-from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -46,31 +45,45 @@ def send_message(bot, message):
 def get_api_answer(current_timestamp):
     """Отправка запроса к сайту Яндекс Практикум"""
     timestamp = current_timestamp or int(time.time())
-    params = {'from_date': 0}
-    response = requests.get(ENDPOINT, headers=HEADERS, params=params).json()
-    if response.status_code == 200:
-        return response
+    params = {'from_date': timestamp}
+    try:
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    except Exception as error:
+        logging.error(f'Ощибка при запросе к API: {error}')
+    if response.status_code != HTTPStatus.OK:
+        logging.error(f'API не отвечает: {response.status_code}')
+        raise Exception('Ошибка ответа')
+    return response.json()
 
 
 def check_response(response):
-    pass
+    """Проверка ответа API"""
+    if not isinstance(response, dict):
+        raise TypeError('response is not dict')
+    if response == {}:
+        raise Exception('Dict is Empty')
+    if 'homeworks' not in response:
+        raise Exception('KeyError homeworks')
+    if type(response.get('homeworks')) is not list:
+        raise TypeError('homeworks is not list')
+    return response['homeworks']
 
 
 def parse_status(homework):
     """Информация о конкретной домашней работе, статус этой работы."""
-    # Надо  дописать тест в check_response на
-    # проверку типа данных и проверка на
-    # статус у меня была не в той функции.
+    if homework == []:
+        return None
+    else:
+        homework_name = homework.get('homework_name')
+        homework_status = homework.get('status')
 
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
+        if not homework_name:
+            raise KeyError('Домашняя работа не обнаружена')
 
-    if not homework_name:
-        raise KeyError('Домашняя работа не обнаружена')
-
-    if not homework_status in HOMEWORK_STATUSES:
-        logging.Logger.debug('В ответе отсутствуют  новые статусы')
-        # raise NoneNothing('В ответе отсутствуют  новые статусы')
+        if not homework_status in HOMEWORK_STATUSES:
+            logging.Logger.debug('В ответе отсутствуют  новые статусы')
+            raise logging.Logger.NoneNothing(
+                'В ответе отсутствуют  новые статусы')
 
     verdict = HOMEWORK_STATUSES[homework_status]
 
@@ -78,34 +91,39 @@ def parse_status(homework):
 
 
 def check_tokens():
-    pass
+    """проверка доступности переменных окружения."""
+    if not PRACTICUM_TOKEN:
+        logging.critical(
+            f'Отсутсвует токен авторизации')
+    if not TELEGRAM_TOKEN:
+        logging.critical(f'Отсутсвует токен телеграма')
+    if not TELEGRAM_CHAT_ID:
+        logging.critical(
+            'Отсутсвует id телерамм чата')
+    else:
+        return True
 
 
 def main():
     """Основная логика работы бота."""
-    homework_statuses = (requests.get(
-        ENDPOINT, headers=HEADERS, params=PAYLOAD)).json()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
 
-    updater.start_polling(poll_interval=RETRY_TIME)
-    updater.idle()
-
     while True:
         try:
-            response = homework_statuses
-
-            ...
-
-            current_timestamp = ...
+            response = get_api_answer(current_timestamp)
+            homework = check_response(response)
+            message = parse_status(homework)
+            current_timestamp = current_timestamp
+            if message is not None:
+                send_message(bot, message)
             time.sleep(RETRY_TIME)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            ...
+            logging.error(message)
+            bot.send_message(TELEGRAM_CHAT_ID, message)
             time.sleep(RETRY_TIME)
-        else:
-            ...
 
 
 if __name__ == '__main__':
