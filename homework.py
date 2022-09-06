@@ -36,13 +36,13 @@ updater = Updater(token=TELEGRAM_TOKEN)
 
 
 def send_message(bot, message):
-    """Отправка сообщения в телеграмм"""
+    """Отправка сообщения в телеграмм."""
     bot = Bot(token=TELEGRAM_TOKEN)
     bot.send_message(TELEGRAM_CHAT_ID, message)
 
 
 def get_api_answer(current_timestamp):
-    """Отправка запроса к сайту Яндекс Практикум"""
+    """Отправка запроса к сайту Яндекс Практикум."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -56,7 +56,7 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    """Проверка ответа API"""
+    """Проверка ответа API."""
     if not isinstance(response, dict):
         raise TypeError('response is not dict')
     if response == {}:
@@ -92,13 +92,11 @@ def parse_status(homework):
 def check_tokens():
     """проверка доступности переменных окружения."""
     if not PRACTICUM_TOKEN:
-        logging.critical(
-            f'Отсутсвует токен авторизации')
+        logging.critical('Отсутсвует токен авторизации')
     if not TELEGRAM_TOKEN:
-        logging.critical(f'Отсутсвует токен телеграма')
+        logging.critical('Отсутсвует токен телеграма')
     if not TELEGRAM_CHAT_ID:
-        logging.critical(
-            'Отсутсвует id телерамм чата')
+        logging.critical('Отсутсвует id телерамм чата')
     else:
         return True
 
