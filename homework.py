@@ -79,14 +79,14 @@ def parse_status(homework):
         if not homework_name:
             raise KeyError('Домашняя работа не обнаружена')
 
-        if not homework_status in HOMEWORK_STATUSES:
+        if homework_status not in HOMEWORK_STATUSES:
             logging.Logger.debug('В ответе отсутствуют  новые статусы')
             raise logging.Logger.NoneNothing(
                 'В ответе отсутствуют  новые статусы')
 
     verdict = HOMEWORK_STATUSES[homework_status]
 
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    return (f'Изменился статус проверки работы "{homework_name}". {verdict}')
 
 
 def check_tokens():
