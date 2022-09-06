@@ -1,7 +1,6 @@
 from http import HTTPStatus
 import logging
 import os
-from telnetlib import STATUS
 import time
 import requests
 
@@ -37,8 +36,8 @@ updater = Updater(token=TELEGRAM_TOKEN)
 
 
 def send_message(bot, message):
+    """Отправка сообщения в телеграмм"""
     bot = Bot(token=TELEGRAM_TOKEN)
-    message = f'Изменился статус проверки работы "{check_response.homework_name}". {check_response.verdict}'
     bot.send_message(TELEGRAM_CHAT_ID, message)
 
 
