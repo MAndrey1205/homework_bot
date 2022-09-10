@@ -109,13 +109,11 @@ def main():
             current_timestamp = current_timestamp
             if message is not None:
                 send_message(bot, message)
-            time.sleep(RETRY_TIME)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
-            time.sleep(RETRY_TIME)
         finally:
             time.sleep(RETRY_TIME)
 
