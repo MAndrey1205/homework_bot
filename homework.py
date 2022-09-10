@@ -5,7 +5,6 @@ import time
 
 import requests
 import telegram
-from telegram import Bot
 from telegram.ext import Updater
 from dotenv import load_dotenv
 from urllib.error import HTTPError
