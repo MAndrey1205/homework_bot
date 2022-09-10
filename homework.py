@@ -39,7 +39,10 @@ updater = Updater(token=TELEGRAM_TOKEN)
 
 def send_message(bot, message):
     """Отправка сообщения в телеграмм."""
-    bot.send_message(TELEGRAM_CHAT_ID, message)
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+    except Exception as e:
+        send_message(bot, e)
 
 
 def get_api_answer(current_timestamp):
@@ -112,6 +115,8 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
+            time.sleep(RETRY_TIME)
+        finally:
             time.sleep(RETRY_TIME)
 
 
