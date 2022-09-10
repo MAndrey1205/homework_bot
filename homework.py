@@ -2,12 +2,14 @@ from http import HTTPStatus
 import logging
 import os
 import time
-import requests
+from tkinter import ALL
 
+import requests
 import telegram
 from telegram import Bot
 from telegram.ext import Updater
 from dotenv import load_dotenv
+from urllib.error import HTTPError
 
 load_dotenv()
 
@@ -21,12 +23,13 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN', '1')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', '123:X')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
+
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-PAYLOAD = {'from_date': 1659511568}
+PAYLOAD = {'from_date': 0}
 
-HOMEWORK_STATUSES = {
+VERDICT = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
@@ -37,7 +40,6 @@ updater = Updater(token=TELEGRAM_TOKEN)
 
 def send_message(bot, message):
     """Отправка сообщения в телеграмм."""
-    bot = Bot(token=TELEGRAM_TOKEN)
     bot.send_message(TELEGRAM_CHAT_ID, message)
 
 
@@ -47,11 +49,10 @@ def get_api_answer(current_timestamp):
     params = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    except Exception as error:
-        logging.error(f'Ощибка при запросе к API: {error}')
+    except Exception as err:
+        raise err
     if response.status_code != HTTPStatus.OK:
-        logging.error(f'API не отвечает: {response.status_code}')
-        raise Exception('Ошибка ответа')
+        raise HTTPError(f'API не отвечает: {response.status_code}')
     return response.json()
 
 
@@ -59,44 +60,36 @@ def check_response(response):
     """Проверка ответа API."""
     if not isinstance(response, dict):
         raise TypeError('response is not dict')
-    if response == {}:
-        raise Exception('Dict is Empty')
     if 'homeworks' not in response:
-        raise Exception('KeyError homeworks')
-    if type(response.get('homeworks')) is not list:
+        raise KeyError('KeyError homeworks')
+    if not isinstance(response['homeworks'], list):
         raise TypeError('homeworks is not list')
     return response['homeworks']
 
 
 def parse_status(homework):
     """Информация о конкретной домашней работе, статус этой работы."""
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
     if homework == []:
         return None
-    else:
-        homework_name = homework.get('homework_name')
-        homework_status = homework.get('status')
+    if not homework_name:
+        raise KeyError('Домашняя работа не обнаружена')
 
-        if not homework_name:
-            raise KeyError('Домашняя работа не обнаружена')
+    if homework_status not in VERDICT:
+        raise KeyError('В ответе отсутствуют  новые статусы')
 
-        if homework_status not in HOMEWORK_STATUSES:
-            logging.Logger.debug('В ответе отсутствуют  новые статусы')
-            raise logging.Logger.NoneNothing(
-                'В ответе отсутствуют  новые статусы')
-
-    verdict = HOMEWORK_STATUSES[homework_status]
+    verdict = VERDICT[homework_status]
 
     return (f'Изменился статус проверки работы "{homework_name}". {verdict}')
 
 
 def check_tokens():
-    """проверка доступности переменных окружения."""
-    if not PRACTICUM_TOKEN:
-        logging.critical('Отсутсвует токен авторизации')
-    if not TELEGRAM_TOKEN:
-        logging.critical('Отсутсвует токен телеграма')
-    if not TELEGRAM_CHAT_ID:
-        logging.critical('Отсутсвует id телерамм чата')
+    """Проверка доступности переменных окружения."""
+    TOKENS = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+    if not all(TOKENS):
+        logging.critical('Отсутсвуют токены')
+        return False
     else:
         return True
 
@@ -104,7 +97,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = 1659511568
 
     while True:
         try:
