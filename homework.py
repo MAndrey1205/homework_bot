@@ -2,7 +2,6 @@ from http import HTTPStatus
 import logging
 import os
 import time
-from tkinter import ALL
 
 import requests
 import telegram
