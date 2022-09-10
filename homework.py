@@ -42,7 +42,8 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception as e:
-        send_message(bot, e)
+        text = f'Сообщение не отправлено ошибка: {e}.'
+        bot.send_message(TELEGRAM_CHAT_ID, text)
 
 
 def get_api_answer(current_timestamp):
@@ -114,6 +115,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
+
         finally:
             time.sleep(RETRY_TIME)
 
