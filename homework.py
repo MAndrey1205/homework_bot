@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-from tkinter import E
 
 import requests
 import telegram
