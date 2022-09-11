@@ -1,13 +1,14 @@
-from http import HTTPStatus
 import logging
 import os
 import time
+from tkinter import E
 
 import requests
 import telegram
 from telegram.ext import Updater
 from dotenv import load_dotenv
 from urllib.error import HTTPError
+from http import HTTPStatus
 
 load_dotenv()
 
@@ -41,8 +42,7 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception as e:
-        text = f'Сообщение не отправлено ошибка: {e}.'
-        bot.send_message(TELEGRAM_CHAT_ID, text)
+        logging.error(f'Сообщение не отправлено ошибка: {e}, {type(e)}.')
 
 
 def get_api_answer(current_timestamp):
@@ -52,7 +52,7 @@ def get_api_answer(current_timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except Exception as err:
-        raise err
+        raise f'Ощибка при запросе:{params} к API: {err}.'
     if response.status_code != HTTPStatus.OK:
         raise HTTPError(f'API не отвечает: {response.status_code}')
     return response.json()
@@ -79,7 +79,7 @@ def parse_status(homework):
         raise KeyError('Домашняя работа не обнаружена')
 
     if homework_status not in VERDICT:
-        raise KeyError('В ответе отсутствуют  новые статусы')
+        raise KeyError('В ответе непредусмотренный статус работы')
 
     verdict = VERDICT[homework_status]
 
@@ -91,7 +91,6 @@ def check_tokens():
     TOKENS = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
     if not all(TOKENS):
         logging.critical('Отсутсвуют токены')
-        return False
     else:
         return True
 
@@ -99,15 +98,16 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 1659511568
-
+    current_timestamp = 1659511567
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             message = parse_status(homework)
-            current_timestamp = current_timestamp
             if message is not None:
+                send_message(bot, message)
+            else:
+                message = 'Статус работы не изменился'
                 send_message(bot, message)
 
         except Exception as error:
