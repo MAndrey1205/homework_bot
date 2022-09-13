@@ -2,12 +2,14 @@ import logging
 import os
 import time
 
+
 import requests
 import telegram
 from telegram.ext import Updater
 from dotenv import load_dotenv
 from urllib.error import HTTPError
 from http import HTTPStatus
+
 
 load_dotenv()
 
@@ -40,8 +42,8 @@ def send_message(bot, message):
     """Отправка сообщения в телеграмм."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except Exception as e:
-        logging.error(f'Сообщение не отправлено ошибка: {e}, {type(e)}.')
+    except Exception.SendMessedge:
+        (f'Cбой при отправке сообщения в Telegram: {message}.')
 
 
 def get_api_answer(current_timestamp):
@@ -96,10 +98,12 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
+    if not check_tokens():
+        exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 1659511567
     while True:
         try:
+            current_timestamp = 1659511567
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             message = parse_status(homework)
