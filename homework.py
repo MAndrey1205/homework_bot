@@ -5,6 +5,7 @@ import time
 
 import requests
 import telegram
+from requests.exceptions import RequestException
 from telegram.ext import Updater
 from dotenv import load_dotenv
 from urllib.error import HTTPError
@@ -44,6 +45,10 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception.SendMessedge:
         (f'Cбой при отправке сообщения в Telegram: {message}.')
+    except RequestException:
+        return 'Ошибка на стороне мессенджера'
+    except telegram.TelegramError:
+        raise telegram.TelegramError
 
 
 def get_api_answer(current_timestamp):
