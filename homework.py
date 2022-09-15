@@ -43,8 +43,6 @@ def send_message(bot, message):
     """Отправка сообщения в телеграмм."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except Exception.SendMessedge:
-        (f'Cбой при отправке сообщения в Telegram: {message}.')
     except RequestException:
         return 'Ошибка на стороне мессенджера'
     except telegram.TelegramError:
@@ -106,12 +104,15 @@ def main():
     if not check_tokens():
         exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    current_timestamp = 1660581609
     while True:
         try:
-            current_timestamp = 1659511567
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
-            message = parse_status(homework)
+            status = homework[0].get('status')
+            message = parse_status(homework[0])
+            if homework[0].get('status') != status:
+                send_message(bot, message)
             if message is not None:
                 send_message(bot, message)
             else:
@@ -122,6 +123,8 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
+        else:
+            current_timestamp = response['current_date']
 
         finally:
             time.sleep(RETRY_TIME)
