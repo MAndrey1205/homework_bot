@@ -68,8 +68,10 @@ def check_response(response):
         raise TypeError('response is not dict')
     if 'homeworks' not in response:
         raise KeyError('KeyError homeworks')
-    if not isinstance(response['homeworks'], list):
+    if not isinstance(response.get('homeworks'), list):
         raise TypeError('homeworks is not list')
+    if (len(response['homeworks'])) == 0:
+        raise ValueError("Список 'homeworks' в check_response пришел пустым")
     return response['homeworks']
 
 
@@ -104,15 +106,12 @@ def main():
     if not check_tokens():
         exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 1660581609
+    current_timestamp = 1662396009
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            homework = check_response(response)
-            status = homework[0].get('status')
-            message = parse_status(homework[0])
-            if homework[0].get('status') != status:
-                send_message(bot, message)
+            homework = check_response(response)[0]
+            message = parse_status(homework)
             if message is not None:
                 send_message(bot, message)
             else:
